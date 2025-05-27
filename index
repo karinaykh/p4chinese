@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小學中文詞彙挑戰 (趣味升級版)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", "KaiTi", "DFKai-SB", "PMingLiU", "MingLiU";
+            background-color: #f0f9ff; /* Default light blue background */
+            transition: background-color 0.5s ease;
+            overflow-x: hidden; /* Prevent horizontal scroll from animations */
+        }
+        .game-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+        .question-item {
+            margin-bottom: 1.5rem;
+            padding: 1.25rem;
+            background-color: #e0f2fe;
+            border-radius: 8px;
+            border-left: 5px solid #0ea5e9;
+        }
+        .answer-input {
+            border: 2px solid #9ca3af;
+            border-radius: 6px;
+            padding: 0.5rem 0.75rem;
+            margin: 0 0.25rem;
+            width: 160px; /* Slightly wider for 4-char idioms */
+            transition: border-color 0.3s, transform 0.3s;
+        }
+        .answer-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+        .feedback-icon {
+            font-size: 1.25rem;
+            margin-left: 0.5rem;
+            vertical-align: middle;
+        }
+        .correct .answer-input {
+            border-color: #22c55e;
+            background-color: #f0fdf4;
+            animation: pop 0.4s ease-out;
+        }
+        .incorrect .answer-input {
+            border-color: #ef4444;
+            background-color: #fef2f2;
+            animation: shake 0.5s;
+        }
+        .correct .feedback-icon::after {
+            content: '✔️';
+            color: #22c55e;
+        }
+        .incorrect .feedback-icon::after {
+            content: '❌';
+            color: #ef4444;
+        }
+        .explanation {
+            font-size: 0.9rem;
+            color: #4b5563;
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            background-color: #f9fafb;
+            border-radius: 4px;
+            border-left: 3px solid #ef4444;
+        }
+        .explanation .correct-answer {
+            font-weight: bold;
+            color: #16a34a;
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: background-color 0.3s, transform 0.1s;
+            cursor: pointer;
+            border: none;
+        }
+        .btn:active {
+            transform: translateY(1px);
+        }
+        .btn-primary {
+            background-color: #3b82f6; /* Blue */
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #2563eb;
+        }
+        .btn-secondary {
+            background-color: #6b7280; /* Gray */
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #4b5563;
+        }
+        .btn-difficulty {
+            background-color: #10b981; /* Emerald green */
+            color: white;
+            margin: 0.5rem;
+            width: 180px; /* Slightly wider button */
+            font-size: 1.1rem;
+        }
+        .btn-difficulty:hover {
+            background-color: #059669;
+        }
+        #score-area {
+            margin-top: 1.5rem;
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #1d4ed8; /* Darker blue for score text */
+        }
+        #difficulty-selection {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        /* Score Progress Bar */
+        #score-progress-bar-container {
+            width: 100%;
+            background-color: #e5e7eb; /* Lighter gray */
+            border-radius: 9999px; /* pill shape */
+            height: 1.75rem; /* 28px */
+            margin-top: 0.75rem; /* 12px */
+        }
+        #score-progress-bar {
+            background-color: #34d399; /* Emerald 500 */
+            height: 100%;
+            border-radius: 9999px;
+            text-align: center;
+            color: white;
+            font-weight: 500;
+            line-height: 1.75rem; /* same as height */
+            transition: width 0.5s ease-in-out;
+        }
+        /* Streak Counter */
+        #perfect-round-streak-counter {
+            font-size: 1.125rem; /* text-lg */
+            font-weight: 600; /* font-semibold */
+            color: #f59e0b; /* amber-500 */
+            margin-top: 0.75rem; /* mt-3 */
+            text-align: center;
+        }
+
+        /* Animations */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+            100% { transform: scale(1); }
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 600px) {
+            .answer-input {
+                width: 130px;
+            }
+            .game-container {
+                margin: 1rem;
+                padding: 1rem;
+            }
+            h1 {
+                font-size: 1.6rem; /* Slightly larger */
+            }
+            .btn-difficulty {
+                width: 100%;
+                font-size: 1rem;
+            }
+            .text-lg { 
+                font-size: 1rem; 
+            }
+             #score-progress-bar-container {
+                height: 1.5rem; /* Slightly smaller on mobile */
+            }
+            #score-progress-bar {
+                line-height: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+    <div class="game-container">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-sky-700">小學中文詞彙挑戰</h1>
+            <p class="mt-2 text-gray-600">（香港小學四年級適用）</p>
+        </header>
+
+        <section id="difficulty-selection">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700">請選擇挑戰級別：</h2>
+            <button class="btn btn-difficulty" data-difficulty="easy">基礎級</button>
+            <button class="btn btn-difficulty" data-difficulty="medium">進階級</button>
+            <button class="btn btn-difficulty" data-difficulty="hard">挑戰級</button>
+        </section>
+
+        <section id="game-content" class="hidden">
+            <section id="instructions" class="mb-6 text-gray-700">
+                <p>小挑戰者，請喺下面句子嘅括號入面，填上最啱嘅詞語或成語啦！完成<span id="questions-count-in-round" class="font-bold text-blue-600"></span>條題目後，撳「<span class="font-semibold text-blue-600">檢查答案</span>」！</p>
+            </section>
+            
+            <section id="game-area">
+                </section>
+
+            <div id="score-progress-bar-container" class="hidden">
+                <div id="score-progress-bar" style="width: 0%;">0/0</div>
+            </div>
+            <div id="perfect-round-streak-counter" class="hidden">🏆 連續完美回合：<span id="perfect-round-streak-count">0</span> 次！</div>
+
+
+            <section id="controls" class="mt-8 flex flex-col sm:flex-row justify-center items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                <button id="check-button" class="btn btn-primary w-full sm:w-auto">檢查答案</button>
+                <button id="reset-level-button" class="btn btn-secondary w-full sm:w-auto">返回選擇級別</button>
+            </section>
+            <section id="score-area" class="text-center mt-6">
+                </section>
+        </section>
+    </div>
+
+    <script>
+        const allQuestions = { // Using the same questions as previous correct answer
+            easy: [
+                { text_before: "1. 打好中文（", text_after: "）對學習其他科目很有幫助。", answer: "基礎", explanation: "基礎: 事物發展的根本或起點。" },
+                { text_before: "2. 做事要先（", text_after: "）清楚，不要魯莽行事。", answer: "考慮", explanation: "考慮: 思考問題，以便作出決定。" },
+                { text_before: "3. 這條小溪的溪水（", text_after: "）見底，非常乾淨。", answer: "清澈", explanation: "清澈: 水清而透明。" },
+                { text_before: "4. 現代（", text_after: "）日新月異，改變了我們的生活。", answer: "科技", explanation: "科技: 科學技術。" },
+                { text_before: "5. 如果不小心，很容易在小事上（", text_after: "）。", answer: "吃虧", explanation: "吃虧: 受到損失或不公平的待遇。" },
+                { text_before: "6. 媽媽準備了豐富的（", text_after: "）來做晚餐。", answer: "材料", explanation: "材料: 可供製作成品或達到某種目的的東西。" },
+                { text_before: "7. 小明不小心（", text_after: "）了一跤，膝蓋擦傷了。", answer: "摔", explanation: "摔: 跌倒。" },
+                { text_before: "8. 遇到困難時，我們不應輕易（", text_after: "）。", answer: "放棄", explanation: "放棄: 不再堅持或丟掉。" },
+                { text_before: "9. 老師對我們的要求十分（", text_after: "），希望我們進步。", answer: "嚴厲", explanation: "嚴厲: 嚴格而厲害。" },
+                { text_before: "10. 小華拾金不昧的行為得到了大家的（", text_after: "）。", answer: "稱讚", explanation: "稱讚: 表示對好人好事的讚揚。" },
+                { text_before: "11. 奶奶用溫暖的手（", text_after: "）着我的頭。", answer: "輕撫", explanation: "輕撫: 輕輕地撫摸。" },
+                { text_before: "12. 在公共場所，我們應（", text_after: "）照顧老弱婦孺。", answer: "優先", explanation: "優先: 先考慮或先處理。" },
+                { text_before: "13. 貓兒（", text_after: "）着窗外飛過的小鳥。", answer: "注視", explanation: "注視: 集中目光看。" },
+                { text_before: "14. 請不要隨地（", text_after: "）垃圾，保持環境清潔。", answer: "丟棄", explanation: "丟棄: 扔掉不要的東西。" },
+                { text_before: "15. 我喜歡在空閒時和朋友（", text_after: "），分享生活點滴。", answer: "聊天", explanation: "聊天: 隨便談話。" },
+                { text_before: "16. 雖然他動作有些（", text_after: "），但他很努力學習。", answer: "笨拙", explanation: "笨拙: 不靈活；不聰明。" }
+            ],
+            medium: [
+                { text_before: "1. 我們要為將來做好（", text_after: "），才能應對各種變化。", answer: "設想", explanation: "設想: 想像、假想。" },
+                { text_before: "2. 這項發明已獲得了國家（", text_after: "），受到法律保護。", answer: "專利", explanation: "專利: 指國家依法在一定時期內授予發明者或其權利繼承人對某項發明創造所獨享的權利。" },
+                { text_before: "3. 運動員憑着（", text_after: "）的意志，完成了艱苦的訓練。", answer: "堅毅", explanation: "堅毅: 堅定有毅力。" },
+                { text_before: "4. 良好的品德是一個人最大的（", text_after: "）。", answer: "利益", explanation: "利益: 好處。（此處可引導學生思考更廣泛的「好處」）" },
+                { text_before: "5. 郵差每天準時把信件（", text_after: "）到各家各戶。", answer: "傳送", explanation: "傳送: 傳遞送達。" },
+                { text_before: "6. 我收到一則重要的（", text_after: "），需要馬上處理。", answer: "訊息", explanation: "訊息: 消息、信息。" },
+                { text_before: "7. 我們要把學到的知識（", text_after: "）到實際生活中。", answer: "應用", explanation: "應用: 使用（知識、理論、方法等）。" },
+                { text_before: "8. 不要被甜言蜜語所（", text_after: "），要保持清醒的頭腦。", answer: "引誘", explanation: "引誘: 用某種手段誘使人做某事（多指壞事）。" },
+                { text_before: "9. 他（", text_after: "）思考這個問題，希望能找到答案。", answer: "反覆", explanation: "反覆: 一遍又一遍；多次重複。" },
+                { text_before: "10. 這篇文章的風格有些（", text_after: "），不夠生動有趣。", answer: "呆板", explanation: "呆板: 不自然；不生動。" },
+                { text_before: "11. 人生難免會遇到（", text_after: "），重要的是如何面對。", answer: "挫折", explanation: "挫折: 失敗、失利。" },
+                { text_before: "12. 學校對學生的行為有（", text_after: "）的規定。", answer: "嚴格", explanation: "嚴格: 在執行制度或掌握標準時不放鬆。" },
+                { text_before: "13. 面對困難，我們要（", text_after: "）積極的措施來解決。", answer: "採取", explanation: "採取: 選取施行（方針、政策、措施、手段等）。" },
+                { text_before: "14. 這位魔術師的表演真（", text_after: "），讓觀眾目瞪口呆。", answer: "厲害", explanation: "厲害: 難以對付或忍受；劇烈；猛烈；了不起。" },
+                { text_before: "15. 經過多年的努力，他終於在科學界（", text_after: "）。", answer: "成名", explanation: "成名: 獲得名譽或名聲。" },
+                { text_before: "16. 攀登高峰的過程充滿（", text_after: "），但風景卻無限好。", answer: "艱辛", explanation: "艱辛: 艱難辛苦。" },
+                { text_before: "17. 我們不能（", text_after: "）父母的期望，要努力向上。", answer: "辜負", explanation: "辜負: 對不住別人的好意、期望或幫助。" },
+                { text_before: "18. 他在國畫藝術方面（", text_after: "）多年，造詣頗深。", answer: "浸淫", explanation: "浸淫: 長時間沉浸在某種環境或學問中。" },
+                { text_before: "19. 記者們前往災區（", text_after: "）受災的居民。", answer: "訪問", explanation: "訪問: 為特定目的而探望並交談。" },
+                { text_before: "20. 他們之間產生了（", text_after: "），需要好好溝通才能化解。", answer: "誤解", explanation: "誤解: 理解得不正確。" },
+                { text_before: "21. 學習和生活是（", text_after: "）的，我們要注意均衡發展。", answer: "息息相關", explanation: "息息相關: 呼吸時氣息相連續。形容關係非常密切。" },
+                { text_before: "22. 為了完成這個項目，他（", text_after: "），廢寢忘食。", answer: "埋頭苦幹", explanation: "埋頭苦幹: 專心一意地刻苦工作。" },
+                { text_before: "23. 在寒冷的冬天，一杯熱茶真是（", text_after: "）。", answer: "雪中送炭", explanation: "雪中送炭: 在下雪天給人送炭取暖。比喻在別人急需時給以物質上或精神上的幫助。" }
+            ],
+            hard: [
+                { text_before: "1. 他被打得（", text_after: "），樣子十分狼狽。", answer: "臉腫額青", explanation: "臉腫額青: 形容被打的慘狀。也作「鼻青臉腫」。" },
+                { text_before: "2. 小明和小紅在舞會上（", text_after: "），很快便成為了好朋友。", answer: "一見鍾情", explanation: "一見鍾情: 指男女之間一見面就產生愛情。也可用於形容對事物一見面就非常喜愛。" },
+                { text_before: "3. 他說得（", text_after: "），好像親眼見過事情的經過一樣。", answer: "言之鑿鑿", explanation: "言之鑿鑿: 形容說話有真憑實據，非常確實。" },
+                { text_before: "4. 爺爺喜歡和老朋友們（", text_after: "），回憶往事。", answer: "促膝談心", explanation: "促膝談心: 形容雙方親密地談話。" },
+                { text_before: "5. 那些壞人到處（", text_after: "），最終難逃法網。", answer: "為非作歹", explanation: "為非作歹: 做各種壞事。" },
+                { text_before: "6. 我們要揪出隊伍中的（", text_after: "），不能讓他們影響集體。", answer: "害羣之馬", explanation: "害羣之馬: 比喻危害集體的人。" },
+                { text_before: "7. 在危急關頭，消防員總是（", text_after: "），拯救市民。", answer: "挺身而出", explanation: "挺身而出: 形容勇敢地站出來承擔責任或主持正義。" },
+                { text_before: "8. 做學問不能（", text_after: "），要多與人交流，吸取經驗。", answer: "閉門造車", explanation: "閉門造車: 比喻脫離實際，只憑主觀辦事。" },
+                { text_before: "9. 同學們交上來的作品水平（", text_after: "），老師需要仔細評選。", answer: "参差不齊", explanation: "参差不齊: 形容長短、高低、大小不一致。也用來比喻水平不一致。" },
+                { text_before: "10. 雖然飢渴難耐，但士兵們靠着（", text_after: "）的信念堅持下去。", answer: "望梅止渴", explanation: "望梅止渴: 比喻用空想來安慰自己。" }
+            ]
+        };
+
+        const difficultySelectionDiv = document.getElementById('difficulty-selection');
+        const gameContentDiv = document.getElementById('game-content');
+        const gameArea = document.getElementById('game-area');
+        const checkButton = document.getElementById('check-button');
+        const resetLevelButton = document.getElementById('reset-level-button');
+        const scoreArea = document.getElementById('score-area');
+        const difficultyButtons = document.querySelectorAll('.btn-difficulty');
+        const questionsCountInRoundSpan = document.getElementById('questions-count-in-round');
+        const scoreProgressBarContainer = document.getElementById('score-progress-bar-container');
+        const scoreProgressBar = document.getElementById('score-progress-bar');
+        const perfectRoundStreakCounterDiv = document.getElementById('perfect-round-streak-counter');
+        const perfectRoundStreakCountSpan = document.getElementById('perfect-round-streak-count');
+
+
+        let currentQuestions = [];
+        let currentDifficulty = '';
+        let perfectRoundStreak = 0;
+        let difficultyLabels = {
+            easy: "基礎級",
+            medium: "進階級",
+            hard: "挑戰級"
+        };
+
+        function shuffleArray(array) {
+            let newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+
+        function loadDifficulty(difficulty) {
+            currentDifficulty = difficulty;
+            let questionPool = shuffleArray(allQuestions[difficulty]);
+            currentQuestions = questionPool.slice(0, Math.min(10, questionPool.length)); // Max 10 questions
+            
+            questionsCountInRoundSpan.textContent = currentQuestions.length;
+            difficultySelectionDiv.classList.add('hidden');
+            gameContentDiv.classList.remove('hidden');
+            scoreProgressBarContainer.classList.add('hidden'); // Hide until answers are checked
+            perfectRoundStreakCounterDiv.classList.add('hidden'); // Hide until answers are checked
+            renderQuestions();
+            scoreArea.innerHTML = ''; 
+            document.body.style.backgroundColor = '#f0f9ff';
+        }
+
+        difficultyButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                loadDifficulty(button.dataset.difficulty);
+            });
+        });
+
+        function renderQuestions() {
+            gameArea.innerHTML = '';
+            currentQuestions.forEach((q, index) => {
+                const questionDiv = document.createElement('div');
+                questionDiv.className = 'question-item';
+                const originalQuestionNumberMatch = q.text_before.match(/^(\d+\.\s*)/);
+                const questionTextOnly = originalQuestionNumberMatch ? q.text_before.substring(originalQuestionNumberMatch[0].length) : q.text_before;
+
+                questionDiv.innerHTML = `
+                    <p class="text-lg">
+                        <span class="font-semibold">${index + 1}.</span> ${questionTextOnly}
+                        <input type="text" class="answer-input" id="answer-${index}" data-index="${index}">
+                        ${q.text_after}
+                        <span class="feedback-icon" id="feedback-icon-${index}"></span>
+                    </p>
+                    <div class="explanation-area" id="explanation-${index}"></div>
+                `;
+                gameArea.appendChild(questionDiv);
+            });
+        }
+
+        function checkAnswers() {
+            let score = 0;
+            let allCorrectInRound = true;
+            currentQuestions.forEach((q, index) => {
+                const inputElement = document.getElementById(`answer-${index}`);
+                const feedbackIconElement = document.getElementById(`feedback-icon-${index}`);
+                const explanationArea = document.getElementById(`explanation-${index}`);
+                const questionItem = inputElement.closest('.question-item');
+
+                inputElement.classList.remove('shake', 'pop'); // Clear previous animations
+                questionItem.classList.remove('correct', 'incorrect');
+                feedbackIconElement.className = 'feedback-icon'; 
+                explanationArea.innerHTML = ''; 
+
+                const userAnswer = inputElement.value.trim();
+                if (userAnswer === q.answer) {
+                    score++;
+                    questionItem.classList.add('correct');
+                    inputElement.classList.add('pop');
+                } else {
+                    allCorrectInRound = false;
+                    questionItem.classList.add('incorrect');
+                    inputElement.classList.add('shake');
+                    explanationArea.innerHTML = `
+                        <div class="explanation">
+                            正確答案：<span class="correct-answer">${q.answer}</span><br>
+                            解釋：${q.explanation}
+                        </div>`;
+                }
+            });
+            
+            // Update score progress bar
+            const scorePercentage = (score / currentQuestions.length) * 100;
+            scoreProgressBar.style.width = scorePercentage + '%';
+            scoreProgressBar.textContent = `${score}/${currentQuestions.length}`;
+            scoreProgressBarContainer.classList.remove('hidden');
+
+            // Update perfect round streak
+            if (allCorrectInRound && currentQuestions.length > 0) {
+                perfectRoundStreak++;
+            } else if (!allCorrectInRound) { // Reset streak if not a perfect round
+                perfectRoundStreak = 0;
+            }
+            perfectRoundStreakCountSpan.textContent = perfectRoundStreak;
+            if (perfectRoundStreak > 0) {
+                 perfectRoundStreakCounterDiv.classList.remove('hidden');
+            } else {
+                perfectRoundStreakCounterDiv.classList.add('hidden');
+            }
+
+
+            const difficultyLabel = difficultyLabels[currentDifficulty] || currentDifficulty.toUpperCase();
+            let scoreMessage = `你喺 <span class="font-bold text-blue-700">${difficultyLabel}</span> 級別答對咗 ${score} / ${currentQuestions.length} 題！`;
+            
+            if (allCorrectInRound && currentQuestions.length > 0) {
+                scoreMessage += " <br><span class='text-green-500 text-xl'>太勁啦，全部答啱晒！你係詞彙小博士！🥳🎉</span>";
+                document.body.style.backgroundColor = '#caffbf'; // Light mint green
+            } else if (score >= currentQuestions.length * 0.7) { // 70% or more
+                scoreMessage += " <br><span class='text-yellow-500 text-lg'>做得好好呀，差少少就滿分喇！繼續努力！👍</span>";
+                document.body.style.backgroundColor = '#fffec8'; // Light yellow
+            } else if (score >= currentQuestions.length * 0.4) { // 40% or more
+                 scoreMessage += " <br><span class='text-orange-500 text-lg'>唔錯呀，再接再厲，下次會更好！💪</span>";
+                 document.body.style.backgroundColor = '#ffe4c4'; // Light bisque
+            } else {
+                 scoreMessage += " <br><span class='text-red-500 text-lg'>唔緊要，失敗乃成功之母，下次再挑戰過啦！😉</span>";
+                 document.body.style.backgroundColor = '#ffdddd'; // Light pink
+            }
+            scoreArea.innerHTML = scoreMessage;
+        }
+
+        function resetToDifficultySelection() {
+            difficultySelectionDiv.classList.remove('hidden');
+            gameContentDiv.classList.add('hidden');
+            gameArea.innerHTML = '';
+            scoreArea.innerHTML = '';
+            scoreProgressBarContainer.classList.add('hidden');
+            perfectRoundStreakCounterDiv.classList.add('hidden');
+            currentQuestions = [];
+            currentDifficulty = '';
+            document.body.style.backgroundColor = '#f0f9ff'; // Reset background
+        }
+
+        checkButton.addEventListener('click', checkAnswers);
+        resetLevelButton.addEventListener('click', resetToDifficultySelection);
+
+    </script>
+</body>
+</html>
